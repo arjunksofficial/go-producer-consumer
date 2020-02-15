@@ -52,7 +52,7 @@ func main() {
 }
 
 func producer(dataChan chan []byte, done chan bool, number int) {
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 100; i++ {
 		user := User{
 			ID:  strconv.Itoa(i) + ":" + strconv.Itoa(number),
 			DOB: time.Now(),
@@ -93,13 +93,14 @@ func enqueue(data []byte) (err error) {
 }
 func dequeue() (data []byte) {
 	queueLock.Lock()
+	log.Println("Length", len(queue))
 	if len(queue) == 0 {
 		time.Sleep(time.Duration(int64(timeInterval) * int64(time.Millisecond)))
 		return dequeue()
 	}
 	dataArr := queue[:1]
 	for _, data = range dataArr {
-		return
+		break
 	}
 	queue = queue[1:]
 	queueLock.Unlock()
