@@ -5,5 +5,10 @@
 ```
 cd {project_folder}
 export CONFIG_PATH={project_folder}/config
-go run main.go
+go run main.go 
+```
+For FIFO 
+
+```
+go run second/main.go
 ```
