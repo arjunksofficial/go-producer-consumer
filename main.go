@@ -50,10 +50,11 @@ func main() {
 		go consumer(dataChan, j)
 	}
 	<-done
+	close(dataChan)
 }
 
 func producer(dataChan chan []byte, done chan bool, number int) {
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 100; i++ {
 		user := User{
 			ID:  strconv.Itoa(i) + ":" + strconv.Itoa(number),
 			DOB: time.Now(),
