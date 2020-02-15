@@ -2,12 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/spf13/viper"
@@ -37,8 +35,6 @@ func init() {
 	numProducer = viper.GetInt("producers")
 	fmt.Println("ConfigPath", os.Getenv("CONFIG_PATH"))
 	fmt.Println("TimeInt", timeInterval, "NumConsumers", numConsumer, "NumProducers", numProducer)
-	size = 10
-	queue = make([][]byte, size)
 }
 func main() {
 	dataChan := make(chan []byte)
@@ -73,32 +69,4 @@ func consumer(dataChan chan []byte, number int) {
 		data := <-dataChan
 		fmt.Println("Consumer", number, string(data))
 	}
-}
-
-var queue [][]byte
-var size int
-var front, end int
-var queueLock sync.Mutex
-
-func enqueue(data []byte) (err error) {
-	queueLock.Lock()
-	if len(queue) >= size {
-		return errors.New("queue full")
-	}
-	queue = append(queue, data)
-	queueLock.Unlock()
-	return
-}
-func dequeue() (data []byte, err error) {
-	queueLock.Lock()
-	if len(queue) == 0 {
-		return []byte{}, errors.New("queue empty")
-	}
-	dataArr := queue[:1]
-	for _, data = range dataArr {
-		return
-	}
-	queue = queue[1:]
-	queueLock.Unlock()
-	return
 }
