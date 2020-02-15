@@ -1,5 +1,5 @@
 {
     "time_interval":200,
-    "consumers":2,
-    "producers":3
+    "consumers":1,
+    "producers":100
 }
