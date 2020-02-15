@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/spf13/viper"
 	"log"
+	"os"
 	"time"
 )
 
@@ -13,18 +15,41 @@ type User struct {
 	DOB time.Time `json:"dob"`
 }
 
+var timeInterval int
+var numProducer, numConsumer int
+
+func init() {
+	viper.SetConfigName("app")
+	viper.SetConfigType("json")
+	viper.AddConfigPath(os.Getenv("CONFIG_PATH"))
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Println(err)
+		log.Println("Unable to Read file")
+		return
+	}
+	timeInterval = viper.GetInt("time_interval")
+	numConsumer = viper.GetInt("consumers")
+	numProducer = viper.GetInt("producers")
+	fmt.Println("ConfigPath", os.Getenv("CONFIG_PATH"))
+	fmt.Println("TimeInt", timeInterval, "NumConsumers", numConsumer, "NumProducers", numProducer)
+}
 func main() {
 	dataChan := make(chan []byte)
 	var done = make(chan bool)
-	go producer(dataChan, done)
-	go consumer(dataChan)
+	for i := 0; i < numProducer; i++ {
+		go producer(dataChan, done, i)
+	}
+	for j := 0; j < numConsumer; j++ {
+		go consumer(dataChan, j)
+	}
 	<-done
 }
 
-func producer(dataChan chan []byte, done chan bool) {
-	for i := 0; i < 10; i++ {
+func producer(dataChan chan []byte, done chan bool, number int) {
+	for i := 0; i < 100; i++ {
 		user := User{
-			ID:  i,
+			ID:  i + number,
 			DOB: time.Now(),
 		}
 		userBytes, err := json.Marshal(user)
@@ -35,9 +60,10 @@ func producer(dataChan chan []byte, done chan bool) {
 	}
 	done <- true
 }
-func consumer(dataChan chan []byte) {
+func consumer(dataChan chan []byte, number int) {
 	for {
+		time.Sleep(time.Duration(int64(timeInterval) * int64(time.Millisecond)))
 		data := <-dataChan
-		fmt.Println(string(data))
+		fmt.Println("Consumer", number, string(data))
 	}
 }
