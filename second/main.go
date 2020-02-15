@@ -84,7 +84,10 @@ var queueLock *sync.Mutex
 func enqueue(data []byte) (err error) {
 	queueLock.Lock()
 	if len(queue) >= size {
+		queueLock.Unlock()
+
 		time.Sleep(time.Duration(int64(timeInterval) * int64(time.Millisecond)))
+
 		return enqueue(data)
 	}
 	queue = append(queue, data)
@@ -92,6 +95,7 @@ func enqueue(data []byte) (err error) {
 	return
 }
 func dequeue() (data []byte) {
+	log.Println("entered dqueue")
 	queueLock.Lock()
 	log.Println("Length", len(queue))
 	if len(queue) == 0 {
