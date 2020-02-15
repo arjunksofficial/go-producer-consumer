@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -37,8 +36,8 @@ func init() {
 	numProducer = viper.GetInt("producers")
 	fmt.Println("ConfigPath", os.Getenv("CONFIG_PATH"))
 	fmt.Println("TimeInt", timeInterval, "NumConsumers", numConsumer, "NumProducers", numProducer)
-	size = 10
-	queue = make([][]byte, size)
+	size = 100
+	queueLock = &sync.Mutex{}
 }
 func main() {
 	dataChan := make(chan []byte)
@@ -62,14 +61,17 @@ func producer(dataChan chan []byte, done chan bool, number int) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		dataChan <- userBytes
+		log.Println("producer", user.ID)
+		enqueue(userBytes)
 	}
 	done <- true
 }
 func consumer(dataChan chan []byte, number int) {
 	for {
+		log.Println("consumer", number)
 		time.Sleep(time.Duration(int64(timeInterval) * int64(time.Millisecond)))
-		data := <-dataChan
+		// fmt.Println(queue)
+		data := dequeue()
 		fmt.Println("Consumer", number, string(data))
 	}
 }
@@ -77,21 +79,23 @@ func consumer(dataChan chan []byte, number int) {
 var queue [][]byte
 var size int
 var front, end int
-var queueLock sync.Mutex
+var queueLock *sync.Mutex
 
 func enqueue(data []byte) (err error) {
 	queueLock.Lock()
 	if len(queue) >= size {
-		return errors.New("queue full")
+		time.Sleep(time.Duration(int64(timeInterval) * int64(time.Millisecond)))
+		return enqueue(data)
 	}
 	queue = append(queue, data)
 	queueLock.Unlock()
 	return
 }
-func dequeue() (data []byte, err error) {
+func dequeue() (data []byte) {
 	queueLock.Lock()
 	if len(queue) == 0 {
-		return []byte{}, errors.New("queue empty")
+		time.Sleep(time.Duration(int64(timeInterval) * int64(time.Millisecond)))
+		return dequeue()
 	}
 	dataArr := queue[:1]
 	for _, data = range dataArr {
